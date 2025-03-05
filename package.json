@@ -1,0 +1,10 @@
+{
+	"name": "leap.forward.unity.common",
+	"version": "0.0.1",
+	"displayName": "Common Unity Infrastrure (Leap Forward)",
+	"description": "Common infrastructure classes for unity game lifecycle.",
+	"unity": "2022.3",
+	"dependencies": {
+		"com.unity.nuget.newtonsoft-json": "3.0.2"
+	}
+}

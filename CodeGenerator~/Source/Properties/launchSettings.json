@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Test Code Generation": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\Test\\Test.csproj"
+    }
+  }
+}

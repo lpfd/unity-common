@@ -20,6 +20,18 @@ namespace Leap.Forward.LightInject
             return container;
         }
 
+        public static IContainerBuilder WithPrefabManager(this IContainerBuilder container)
+        {
+            container.Register<IPrefabManager, PrefabManager>(Lifetime.Singleton);
+            return container;
+        }
+
+        public static IContainerBuilder WithUIManager(this IContainerBuilder container)
+        {
+            container.Register<IUIManager, UIManager>(Lifetime.Singleton);
+            return container;
+        }
+
         public static IContainerBuilder WithSceneTransitionAnimator(this IContainerBuilder container, ISceneTransitionAnimator transitionAnimator)
         {
             if (transitionAnimator != null)

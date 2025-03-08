@@ -7,13 +7,8 @@ using System.Text;
 
 namespace Leap.Forward.Unity.Common
 {
-    enum ClassType
-    {
-        Module,
-        Container
-    }
     [Generator]
-    public class LeapForwardSourceGenerator : ISourceGenerator
+    public class CompositionSourceGenerator : ISourceGenerator
     {
         public void Execute(GeneratorExecutionContext context)
         {

@@ -37,15 +37,31 @@ namespace Leap.Forward.Composition
             }
             else
             {
-                SetupModules();
+                SetupModule();
             }
+        }
+
+        /// <summary>
+        /// This function is called when the behaviour becomes disabled or inactive.
+        /// </summary>
+        protected virtual void OnDisable()
+        {
+            TearDownModule();
+            ((IModule<TContainer>)this).SetContainer(null);
         }
 
         /// <summary>
         /// Method to setup module references. Executed when container is fully initialized.
         /// Executed from module's <see cref="OnEnable"/> method.
         /// </summary>
-        public virtual void SetupModules()
+        public virtual void SetupModule()
+        {
+        }
+
+        /// <summary>
+        /// Method to release module references. Executed when module is disabled.
+        /// </summary>
+        public virtual void TearDownModule()
         {
 
         }
@@ -56,7 +72,7 @@ namespace Leap.Forward.Composition
         private void HandleContainerInitialized()
         {
             Container.Initialized -= HandleContainerInitialized;
-            SetupModules();
+            SetupModule();
         }
 
         /// <inheritdoc/>

@@ -45,6 +45,11 @@ public class HealthManager : ModuleBase<Character>, IHealthManager
         // Initialization logic
     }
 
+    public override void TearDownModule()
+    {
+        //  Destruction logic
+    }
+
     public void TakeDamage(int amount)
     {
         health -= amount;
@@ -67,6 +72,11 @@ public class Hitbox : ModuleBase<Character>
     {
         // Discover and store reference to HealthManager module
         healthManager = Container.HealthManager;
+    }
+
+    public override void TearDownModule()
+    {
+        healthManager = null;
     }
 
     private void OnCollisionEnter(Collision collision)

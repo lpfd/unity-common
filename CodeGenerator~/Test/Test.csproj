@@ -2,8 +2,17 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-	  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+	<LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Source\Leap.Forward.Unity.Common.CodeGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
@@ -13,9 +22,13 @@
     <Reference Include="Leap.Forward.Unity.Common">
       <HintPath>..\..\..\..\UnityProject\Library\ScriptAssemblies\Leap.Forward.Unity.Common.dll</HintPath>
     </Reference>
-    <Reference Include="UnityEngine.CoreModule">
+	  <Reference Include="Newtonsoft.Json">
+		  <HintPath>..\..\..\..\UnityProject\Library\PackageCache\com.unity.nuget.newtonsoft-json\Runtime\Newtonsoft.Json.dll</HintPath>
+	  </Reference>
+	  <Reference Include="UnityEngine.CoreModule">
       <HintPath>..\..\..\..\..\..\..\Program Files\Unity\Hub\Editor\6000.0.34f1\Editor\Data\Managed\UnityEngine\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
   </ItemGroup>
+
 
 </Project>

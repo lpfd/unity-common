@@ -17,6 +17,11 @@ namespace Leap.Forward
             _transitionAnimator = transitionAnimator;
         }
 
+        /// <summary>
+        /// The name of the Scene that is currently active in the game or app.
+        /// </summary>
+        public string CurrentSceneName => SceneManager.GetActiveScene().name;
+
         public Coroutine Load(string name, Action onLoaded = null) =>
           _coroutineRunner.StartCoroutine(LoadScene(name, onLoaded));
 

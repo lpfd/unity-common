@@ -1,3 +1,4 @@
+using Leap.Forward.SaveFiles;
 using Leap.Forward.Transitions;
 using System;
 using UnityEngine;
@@ -23,6 +24,12 @@ namespace Leap.Forward.LightInject
         public static IContainerBuilder WithPrefabManager(this IContainerBuilder container)
         {
             container.Register<IPrefabManager, PrefabManager>(Lifetime.Singleton);
+            return container;
+        }
+
+        public static IContainerBuilder WithSaveManager(this IContainerBuilder container)
+        {
+            container.Register<ISaveManager, SaveManager>(Lifetime.Singleton);
             return container;
         }
 

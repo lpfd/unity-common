@@ -1,9 +1,9 @@
-using UnityEngine;
-
-namespace Leap.Forward
+namespace Leap.Forward.SaveFiles
 {
-    public class ISaveManager
+    public interface ISaveManager
     {
-    
+        bool HasSaveAtSlot(int slotIndex);
+        void LoadGame(int slotIndex);
+        void SaveGame(int slotIndex);
     }
 }

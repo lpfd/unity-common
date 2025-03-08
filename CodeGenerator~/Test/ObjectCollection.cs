@@ -4,5 +4,5 @@ using System.Collections.Generic;
 [JsonVersion]
 public partial class ObjectCollection
 {
-    public IList<object> Items { get; private set; } = new List<object>();
+    public List<NewVersion> Items { get; private set; } = new List<NewVersion>();
 }

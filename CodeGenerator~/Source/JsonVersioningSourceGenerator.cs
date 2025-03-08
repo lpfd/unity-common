@@ -7,6 +7,8 @@ namespace Leap.Forward.Unity.Common
     [Generator]
     public class JsonVersioningSourceGenerator : ISourceGenerator
     {
+        NameAndNamespace _jsonVersionAttr = new NameAndNamespace("Leap.Forward.JsonVersioning.JsonVersionAttribute");
+
         public void Execute(GeneratorExecutionContext context)
         {
             var compilation = context.Compilation;
@@ -25,12 +27,11 @@ namespace Leap.Forward.Unity.Common
                     if (typeSymbolInfo == null)
                         continue;
 
-                    var newtofsoftAttr = typeSymbolInfo.GetAttributes().FirstOrDefault(attr => attr.AttributeClass?.Name == "JsonVersionAttribute");
+                    var newtofsoftAttr = typeSymbolInfo.GetAttributes().FirstOrDefault(attr => attr.AttributeClass.Is(_jsonVersionAttr));
                     if (newtofsoftAttr != null)
                     {
                         var gen = new NewtonsoftSerializerGenerator(typeSymbolInfo, newtofsoftAttr, context);
                         gen.Generate();
-
                     }
                 }
             }

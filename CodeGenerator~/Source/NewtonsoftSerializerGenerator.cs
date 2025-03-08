@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,6 +8,8 @@ namespace Leap.Forward.Unity.Common
 {
     public class NewtonsoftSerializerGenerator : GeneratorBase
     {
+        private static NameAndNamespace iCollectionName = new NameAndNamespace("System.Collections.Generic.IList");
+
         public NewtonsoftSerializerGenerator(ITypeSymbol typeSymbolInfo, AttributeData? attribute, GeneratorExecutionContext context) : base(typeSymbolInfo, context)
         {
             if (attribute != null)
@@ -28,9 +31,6 @@ namespace Leap.Forward.Unity.Common
         public INamedTypeSymbol? PreviousVersion { get; }
 
         public int Version { get; }
-
-        private string jsonPropertyAttributeName = "Newtonsoft.Json.JsonPropertyAttribute";
-        private string jsonIgnoreAttributeName = "Newtonsoft.Json.JsonIgnoreAttribute";
 
         internal void Generate()
         {
@@ -67,71 +67,101 @@ namespace Leap.Forward.Unity.Common
 
             sourceBuilder.AppendLine($"partial class {className} {{");
 
-            sourceBuilder.AppendLine($"public static {className} ReadJson(Newtonsoft.Json.Linq.JObject jobject, Newtonsoft.Json.JsonSerializer serializer)");
+            var properties = ClassSymbol.GetMembers().OfType<IPropertySymbol>().Select(_ => new PropertyInfo(_)).Where(_=>!_.Ignore).ToList();
+
+            sourceBuilder.AppendLine($"public {className} FromJToken(Newtonsoft.Json.Linq.JToken token)");
             sourceBuilder.AppendLine("{");
+            sourceBuilder.AppendLine("var jobject = token as Newtonsoft.Json.Linq.JObject;");
+            sourceBuilder.AppendLine("if (jobject == null) throw new System.FormatException(\"Expected JObject\");");
             if (PreviousVersion != null)
             {
                 sourceBuilder.AppendLine("if (!jobject.TryGetValue(\"$version\", out Newtonsoft.Json.Linq.JToken versionToken) || versionToken.Type != Newtonsoft.Json.Linq.JTokenType.Integer || Newtonsoft.Json.Linq.Extensions.Value<int>(versionToken) != " + Version + ")");
                 sourceBuilder.AppendLine("{");
-                sourceBuilder.AppendLine($"return new {className}({PreviousVersion.Name}.ReadJson(jobject, serializer));");
+                sourceBuilder.AppendLine($"  var prev = new {PreviousVersion.Name}();");
+                sourceBuilder.AppendLine($"  prev.FromJToken(token);");
+                sourceBuilder.AppendLine($"  this.UpgradeFrom(prev);");
+                sourceBuilder.AppendLine("  return this;");
                 sourceBuilder.AppendLine("}");
             }
-            sourceBuilder.AppendLine($"var result = new {className}();");
-            foreach (var propertySymbol in ClassSymbol.GetMembers().OfType<IPropertySymbol>())
+            foreach (var propertySymbol in properties)
             {
-                var propertyName = propertySymbol.Name;
-                var hasGetter = propertySymbol.GetMethod != null;
-                var hasSetter = propertySymbol.SetMethod != null;
-                var jsonProperty = propertySymbol.GetAttributes().FirstOrDefault(ad =>
-                    ad.AttributeClass?.ToDisplayString() == jsonPropertyAttributeName);
-                var jsonIgnore = propertySymbol.GetAttributes().FirstOrDefault(ad =>
-                    ad.AttributeClass?.ToDisplayString() == jsonIgnoreAttributeName);
-
-                if (jsonIgnore != null || !hasSetter)
+                if (!propertySymbol.HasGetter)
                     continue;
 
-                var jsonPropertyName = propertyName;
-                if (jsonProperty != null && jsonProperty.ConstructorArguments.Length > 0)
-                {
-                    jsonPropertyName = (jsonProperty.ConstructorArguments[0].Value as string) ?? jsonPropertyName;
-                }
-                sourceBuilder.AppendLine($"if (jobject.TryGetValue(\"{jsonPropertyName}\", out var value))");
+                sourceBuilder.AppendLine("{ // {propertySymbol.JsonName}");
+
+
+                sourceBuilder.AppendLine($"if (jobject.TryGetValue(\"{propertySymbol.JsonName}\", out var value))");
                 sourceBuilder.AppendLine("{");
-                sourceBuilder.AppendLine($"    result.{propertyName} = value.ToObject<{propertySymbol.Type.ToDisplayString()}>();");
+                if (propertySymbol.JsonTokenConverter != null)
+                {
+                    sourceBuilder.AppendLine($"    this.{propertySymbol.PropertyName} = {propertySymbol.JsonTokenConverter}.FromJToken(value, this.{propertySymbol.PropertyName});");
+                }
+                else
+                {
+                    sourceBuilder.AppendLine($"if (value == null) {{ this.{propertySymbol.PropertyName} = default({propertySymbol.PropertyType.ToDisplayString()}); }} else {{");
+                    sourceBuilder.AppendLine($"    var existingValue = this.{propertySymbol.PropertyName};");
+                    sourceBuilder.AppendLine($"    if (existingValue == default({propertySymbol.PropertyType.ToDisplayString()})) existingValue = new {propertySymbol.PropertyType.ToDisplayString()}();");
+                    if (propertySymbol.PropertyType.ImplementsInterface(iCollectionName, out var elementType))
+                    {
+                        sourceBuilder.AppendLine("    var array = (Newtonsoft.Json.Linq.JArray)value;");
+                        sourceBuilder.AppendLine("    foreach (var item in array) {");
+                        sourceBuilder.AppendLine($"        existingValue.Add((new {elementType.ToDisplayString()}()).FromJToken(item));");
+                        sourceBuilder.AppendLine("    }");
+                    }
+                    else
+                    {
+                        sourceBuilder.AppendLine($"    existingValue = existingValue.FromJToken(value);");
+                    }
+                    if (propertySymbol.HasSetter)
+                    {
+                        sourceBuilder.AppendLine($"    this.{propertySymbol.PropertyName} = existingValue;");
+                    }
+                    sourceBuilder.AppendLine("}");
+                }
                 sourceBuilder.AppendLine("}");
+                sourceBuilder.AppendLine("} // {propertySymbol.JsonName}");
             }
-            sourceBuilder.AppendLine($"return result;");
+            sourceBuilder.AppendLine("return this;");
             sourceBuilder.AppendLine("}");
 
-            sourceBuilder.AppendLine($"public void WriteJson(Newtonsoft.Json.JsonWriter  writer, Newtonsoft.Json.JsonSerializer serializer)");
+            sourceBuilder.AppendLine($"public Newtonsoft.Json.Linq.JToken ToJToken()");
             sourceBuilder.AppendLine("{");
             sourceBuilder.AppendLine("var jobject = new Newtonsoft.Json.Linq.JObject();");
             if (Version != 0)
             {
                 sourceBuilder.AppendLine($"jobject[\"$version\"] = {Version};");
             }
-            foreach (var propertySymbol in ClassSymbol.GetMembers().OfType<IPropertySymbol>())
-            {
-                var propertyName = propertySymbol.Name;
-                var hasGetter = propertySymbol.GetMethod != null;
-                var hasSetter = propertySymbol.SetMethod != null;
-                var jsonProperty = propertySymbol.GetAttributes().FirstOrDefault(ad =>
-                    ad.AttributeClass?.ToDisplayString() == jsonPropertyAttributeName);
-                var jsonIgnore = propertySymbol.GetAttributes().FirstOrDefault(ad =>
-                    ad.AttributeClass?.ToDisplayString() == jsonIgnoreAttributeName);
 
-                if (jsonIgnore != null || !hasGetter)
+            foreach (var propertySymbol in properties)
+            {
+                if (!propertySymbol.HasGetter)
                     continue;
 
-                var jsonPropertyName = propertyName;
-                if (jsonProperty != null && jsonProperty.ConstructorArguments.Length > 0)
+                if (propertySymbol.JsonTokenConverter != null)
                 {
-                    jsonPropertyName = (jsonProperty.ConstructorArguments[0].Value as string) ?? jsonPropertyName;
+                    sourceBuilder.AppendLine($"jobject[\"{propertySymbol.JsonName}\"] = {propertySymbol.JsonTokenConverter.ToDisplayString()}.ToJToken(this.{propertySymbol.PropertyName});");
                 }
-
-                sourceBuilder.AppendLine($"jobject[\"{jsonPropertyName}\"] = Newtonsoft.Json.Linq.JToken.FromObject(this.{propertyName}, serializer);");
+                else
+                {
+                    sourceBuilder.AppendLine("{");
+                    sourceBuilder.AppendLine($"var propertyValue = this.{propertySymbol.PropertyName};");
+                    sourceBuilder.AppendLine($"if (propertyValue != default({propertySymbol.PropertyType.ToDisplayString()})) {{");
+                    if (propertySymbol.PropertyType.ImplementsInterface(iCollectionName))
+                    {
+                        sourceBuilder.AppendLine("  var array = new Newtonsoft.Json.Linq.JArray();");
+                        sourceBuilder.AppendLine("  foreach (var item in propertyValue)");
+                        sourceBuilder.AppendLine("     array.Add(item.ToJToken());");
+                        sourceBuilder.AppendLine($"  jobject[\"{propertySymbol.JsonName}\"] = array;");
+                    }
+                    else
+                    {
+                        sourceBuilder.AppendLine($"  jobject[\"{propertySymbol.JsonName}\"] = propertyValue.ToJToken();");
+                    }
+                    sourceBuilder.AppendLine("} }");
+                }
             }
-            sourceBuilder.AppendLine("jobject.WriteTo(writer);");
+            sourceBuilder.AppendLine("return jobject;");
             sourceBuilder.AppendLine("}");
 
             sourceBuilder.AppendLine("}");
@@ -149,6 +179,56 @@ namespace Leap.Forward.Unity.Common
             string sanitizedFileName = SanitizeFileName(fullClassName);
             Context.AddSource($"{sanitizedFileName}.g.cs", sourceBuilder.ToString());
         }
+
+        class PropertyInfo
+        {
+            private static NameAndNamespace jsonTokenConverterAttributeName = new NameAndNamespace("Leap.Forward.JsonVersioning.JsonTokenConverterAttribute");
+            private static NameAndNamespace jsonPropertyAttributeName = new NameAndNamespace("Newtonsoft.Json.JsonPropertyAttribute");
+            private static NameAndNamespace jsonIgnoreAttributeName = new NameAndNamespace("Newtonsoft.Json.JsonIgnoreAttribute");
+
+
+            public PropertyInfo(IPropertySymbol propertySymbol)
+            {
+                JsonName = PropertyName = propertySymbol.Name;
+                PropertyType = propertySymbol.Type;
+                Ignore = propertySymbol.GetAttributes().FirstOrDefault(ad =>
+                  ad.AttributeClass.Is(jsonIgnoreAttributeName)) != null;
+                HasGetter = propertySymbol.GetMethod != null;
+
+                if (!Ignore)
+                {
+
+                    HasSetter = propertySymbol.SetMethod != null;
+                    var jsonProperty = propertySymbol.GetAttributes().FirstOrDefault(ad =>
+                        ad.AttributeClass.Is(jsonPropertyAttributeName));
+
+                    if (jsonProperty != null && jsonProperty.ConstructorArguments.Length > 0)
+                    {
+                        JsonName = (jsonProperty.ConstructorArguments[0].Value as string) ?? JsonName;
+                    }
+
+                    var jsonTokenConverter = propertySymbol.GetAttributes().FirstOrDefault(ad =>
+                        ad.AttributeClass.Is(jsonTokenConverterAttributeName));
+                    if (jsonTokenConverter != null)
+                    {
+                        if (jsonTokenConverter.ConstructorArguments[0].Value is INamedTypeSymbol typeSymbol)
+                        {
+                            JsonTokenConverter = typeSymbol;
+                        }
+                    }
+                }
+            }
+
+            public string JsonName { get; }
+            public ITypeSymbol PropertyType { get; }
+            public string PropertyName { get; }
+            public bool Ignore { get; }
+            public bool HasGetter { get; }
+            public bool HasSetter { get; }
+            public AttributeData? JsonProperty { get; }
+            public INamedTypeSymbol? JsonTokenConverter { get; }
+        }
+
     }
 
 }

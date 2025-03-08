@@ -6,7 +6,7 @@ public partial class NewVersion
     public NewVersion()
     {
     }
-    public NewVersion(OldVersion oldVersion)
+    private void UpgradeFrom(OldVersion oldVersion)
     {
     }
 }

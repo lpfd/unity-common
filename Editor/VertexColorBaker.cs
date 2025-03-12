@@ -1,19 +1,14 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
 namespace Leap.Forward
 {
     public class VertexColorBaker : IDisposable
     {
-        private readonly string _exportFolder;
         private readonly Material _materialOverride;
         private readonly Material _transparentMaterialOverride;
         private readonly Cache<Object> _cache = new Cache<Object>();
@@ -23,9 +18,8 @@ namespace Leap.Forward
         private HashSet<System.Type> _unknownTypes = new HashSet<System.Type>();
         private readonly bool _splitTransparent;
 
-        public VertexColorBaker(string exportFolder, Material materialOverride, Material transparentMaterialOverride)
+        public VertexColorBaker(Material materialOverride, Material transparentMaterialOverride)
         {
-            _exportFolder = exportFolder;
             _materialOverride = materialOverride;
             _transparentMaterialOverride = transparentMaterialOverride;
             _splitTransparent = _transparentMaterialOverride != null;

@@ -59,7 +59,7 @@ namespace Leap.Forward
             var outputAssetFolder = Path.GetDirectoryName(assetPath);
             var outputAssetPath = Path.Combine(outputAssetFolder, Path.GetFileNameWithoutExtension(assetPath) + ".baked.prefab");
 
-            var baker = new VertexColorBaker(outputAssetFolder, AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath("1996ef8b0e944f7449224996be82b7f6")), AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath("d303451c420378a46ac2515a1e9984b9")));
+            var baker = new VertexColorBaker(AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath("1996ef8b0e944f7449224996be82b7f6")), AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath("d303451c420378a46ac2515a1e9984b9")));
             baker.BakePrefabAtPath(assetPath, outputAssetPath);
         }
 

@@ -39,24 +39,6 @@ namespace Leap.Forward
             }
         }
 
-        [MenuItem("Tools/Build Android")]
-        public static void BuildAndroid()
-        {
-            PerformBuildTarget("Android", null);
-        }
-
-        [MenuItem("Tools/Build WebGL")]
-        public static void BuildWebGL()
-        {
-            PerformBuildTarget("WebGL", null);
-        }
-
-        [MenuItem("Tools/Build Windows")]
-        public static void BuildWindows()
-        {
-            PerformBuildTarget("StandaloneWindows64", null);
-        }
-
         public static void PerformBuild()
         {
             PerformBuildTarget(GetCommandLineArg("-buildTarget"), GetCommandLineArg("-buildTargetName"));

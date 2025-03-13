@@ -4,7 +4,7 @@ public partial class CompositionTestModuleB : ModuleBase<CompositionTestContaine
 {
     public CompositionTestModuleA ModuleA { get; private set; }
 
-    public override void SetupModules()
+    public override void SetupModule()
     {
         ModuleA = Container.ModuleA;
     }

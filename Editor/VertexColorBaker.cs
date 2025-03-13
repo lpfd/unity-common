@@ -294,7 +294,9 @@ namespace Leap.Forward
                 var bones = new Transform[skinnedMeshRenderer.bones.Length];
                 for (var index = 0; index < bones.Length; index++)
                 {
-                    bones[index] = root.FindRecursive(skinnedMeshRenderer.bones[index].name);
+                    var bone = skinnedMeshRenderer.bones[index];
+                    if (bone != null)
+                        bones[index] = root.FindRecursive(bone.name);
                 }
 
                 newSkinnedMeshRenderer.bones = bones;

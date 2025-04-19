@@ -1,8 +1,6 @@
-using log4net.Util;
-
 namespace Leap.Forward.Interactions
 {
-    public interface IHoverable
+    public interface IHoverable: IUnityComponent
     {
         /// <summary>
         /// The OnPointerOver callback is executed at an Element when a pointing device (such as a mouse or trackpad) 

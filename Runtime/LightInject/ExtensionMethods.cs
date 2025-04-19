@@ -87,6 +87,5 @@ namespace Leap.Forward.LightInject
                 _callback?.Invoke();
             }
         }
-
     }
 }

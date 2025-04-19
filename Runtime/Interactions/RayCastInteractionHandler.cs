@@ -3,7 +3,7 @@ using UnityEngine.Events;
 
 namespace Leap.Forward.Interactions
 {
-    public class RayCastInteractionHandler : MonoBehaviour
+    public class RayCastInteractionHandler : MonoBehaviour, IInteractionHandler
     {
         [System.Serializable]
         public class HoverEvent : UnityEvent<IHoverable> { }
@@ -31,6 +31,13 @@ namespace Leap.Forward.Interactions
         private GameObject lastTarget;
 
         private IHoverable lastHoverable;
+        private ActiveInteraction activeInteraction;
+
+        public class ActiveInteraction
+        {
+            public IInteractable Interactable { get; set; }
+            public GameObject Target { get; set; }
+        }
 
         public void Awake()
         {
@@ -54,6 +61,8 @@ namespace Leap.Forward.Interactions
                 var hoverable = lastTarget.GetComponentInParent<IHoverable>();
                 if (hoverable != lastHoverable)
                 {
+                    StopInteraction();
+
                     if (lastHoverable != null)
                     {
                         lastHoverable.OnPointerOut();
@@ -74,6 +83,34 @@ namespace Leap.Forward.Interactions
                 lastHoverable?.OnPointerOut();
                 onPointerOut?.Invoke(lastHoverable);
                 lastHoverable = null;
+            }
+        }
+
+        public void StartInteraction(GameObject gameObject)
+        {
+            StopInteraction();
+            if (lastHoverable != null)
+            {
+                var activeInteractable = lastHoverable.GameObject.GetComponentInParent<IInteractable>();
+                if (activeInteractable != null)
+                {
+                    activeInteraction = new ActiveInteraction { Interactable = activeInteractable, Target = gameObject };
+                    activeInteractable.StartInteraction(gameObject);
+                }
+            }
+        }
+
+        public void StopInteraction(GameObject gameObject)
+        {
+            StopInteraction();
+        }
+
+        private void StopInteraction()
+        {
+            if (activeInteraction != null)
+            {
+                activeInteraction.Interactable.StopInteraction(activeInteraction.Target);
+                activeInteraction = null;
             }
         }
     }
